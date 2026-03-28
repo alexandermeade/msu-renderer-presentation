@@ -7,7 +7,7 @@ from utils.reader import RenderBuffer, ObjReader
 
 def main():
 
-    objreader = ObjReader("./untitled.obj")
+    objreader = ObjReader("./models/cube.obj")
     renderBuffer = objreader.parse()
 
     print(renderBuffer)
@@ -32,7 +32,7 @@ def main():
     WHITE:Color = (255, 255, 255)
 
 
-    # Game loop
+    # game loop
     running = True
     while running:
         for event in pygame.event.get():
@@ -54,7 +54,7 @@ def draw_triangle(screen, projected_points, color=(255,255,255)):
     screen_points = []
 
     for p in projected_points:
-        # p is gonna be of the form [x, y, z, w]
+        # p is gonna be of the form [x, y, z, 1]
         if p[3] != 0:
             x_ndc = p[0] / p[3]  # Normalize x via x' = x/z
             y_ndc = p[1] / p[3]  # Normalize y via y' = y/z
@@ -84,6 +84,7 @@ def render(screen, renderBuffer:RenderBuffer, projMat: np.matrix , camera: Camer
             projMat @ tris[1],
             projMat @ tris[2]
         ])
+
 
 
         print(projected_points)
