@@ -76,6 +76,9 @@ The way this cube gets subsected and rerendered back out in triangles looks like
 
 We can read this file using this algorithm
 
+<details>
+  <summary>Python Implementation</summary>
+  
 ```py
 lines:list[str] = self.path.read_text().splitlines()
 render_buffer = RenderBuffer()
@@ -119,8 +122,10 @@ class RenderBuffer:
     def __repr__(self):
         return f"vertexs: {self.verts}\nindex order {self.tris}"
 ```
+</details>
 
-Now you may notice that as we are appending the points into a vertexs we actually extend the vertexs by one extra coordiniate and we set it to 1 for all vertexs. The reason we do this is revealed later in the README. 
+
+Now you may notice in the implementation that as we are appending the points from the vertexs we actually extend the vertexs by one extra coordiniate and we set it to 1 for all vertexs. The reason we do this is revealed later is to set our implementation in homogenous coordinates. These will be super helpful later on in the implementation. 
 
 
 # Math Prerequisites 
@@ -179,19 +184,25 @@ A camera's job in rendering is to mimic looking through a camera at some kind of
 - `znear` represents how close something can be to the camera and still be in your sight
 - `width` and height represent the amount of space elegible for you to see. In this case the whole screen is what we want to see so we instantiate the `Camera` class with our screen's height and width.
 
+<details>
+  <summary>
+    Python Implementation
+  </summary>
+  
+  ```py 
+  @dataclass
+  class Camera: 
+      fov: float
+      zfar: float
+      znear: float
+      width: float
+      height: float
+  
+      def aspect_ratio(self) -> float:
+          return self.width/self.height
+  ```
 
-```py 
-@dataclass
-class Camera: 
-    fov: float
-    zfar: float
-    znear: float
-    width: float
-    height: float
-
-    def aspect_ratio(self) -> float:
-        return self.width/self.height
-```
+</details>
 
 
 # Space
@@ -228,22 +239,29 @@ $$
 \end{bmatrix}
 $$
 
+<details>
+  <summary>
+    Python Implementation
+  </summary>
+
+  
+  ```py
+  def projection(camera: Camera) -> np.ndarray:
+      aspect = camera.aspect_ratio()
+      f = 1 / math.tan(math.radians(camera.fov) / 2)
+      znear = camera.znear
+      zfar = camera.zfar
+  
+      return np.array([
+          [f/aspect, 0, 0, 0],
+          [0, f, 0, 0],
+          [0, 0, -(zfar + znear)/(zfar - znear), -1],
+          [0, 0, -2*znear*zfar/(zfar - znear), 0]
+      ], dtype=np.float32)
+  ```
+  
+</details>
 We can represent this projection in Python using NumPy 
-
-```py
-def projection(camera: Camera) -> np.ndarray:
-    aspect = camera.aspect_ratio()
-    f = 1 / math.tan(math.radians(camera.fov) / 2)
-    znear = camera.znear
-    zfar = camera.zfar
-
-    return np.array([
-        [f/aspect, 0, 0, 0],
-        [0, f, 0, 0],
-        [0, 0, -(zfar + znear)/(zfar - znear), -1],
-        [0, 0, -2*znear*zfar/(zfar - znear), 0]
-    ], dtype=np.float32)
-```
 
 Using the `cube.obj` file we should be able to produce the front of a cube through using the projected points of each vertex and then drawing it in order of the faces for each triangle (This is also known as the winding order)
 
@@ -253,6 +271,27 @@ We can project each point from the triangle using the projection matrix while no
 $$
   \vec{p_n} = (proj) (\vec{t_{n}})
 $$
+
+<details>
+  <summary>
+    Python Implementation
+  </summary>
+
+  Note: the `@` operator is a matrix multiplication operation in the `NumPy` library 
+  
+  ```py
+      for tris in renderBuffer.tris:
+        p1 = renderBuffer.verts[tris[0]]
+        p2 = renderBuffer.verts[tris[1]]
+        p3 = renderBuffer.verts[tris[2]]
+        tri:list[np.ndarray] = [p1.copy(), p2.copy(), p3.copy()]
+        projected_points = np.stack([
+            projMat @ tri[0],
+            projMat @ tri[1],
+            projMat @ tri[2]
+        ])
+  ```
+</details>
 
 With this we have no offically gone from world space to screen space!
 
@@ -303,30 +342,283 @@ We floor it here because screen space exists as a grid of cells meaning that our
 
 Now we have gotten to the part of glory! we can finally draw each vertex of each triangle onto the screen!
 
-```py
-width, height = screen.get_size()
-screen_points = []
-
-for p in projected_points:
-    # p is gonna be of the form [x, y, z, w]
-    # We then normalize x and y with w to fit it onto R^2
-    if p[3] != 0:
-        x_ndc = p[0] / p[3]  # Normalize x via x' = x/w
-        y_ndc = p[1] / p[3]  # Normalize y via y' = y/w
-    else:
-        x_ndc, y_ndc = 0, 0
-    
-
-    # convert from normalized device coords (-1..1) to screen coordinates
-    x_screen = int((x_ndc + 1) * 0.5 * width)
-    y_screen = int((1 - (y_ndc + 1) * 0.5) * height)  # flip y-axis
-    screen_points.append((x_screen, y_screen))
-# draw triangle lines
-pygame.draw.polygon(screen, color, screen_points, width=1) 
-```
+<details>
+  <summary>
+    Python Implementation
+  </summary>
+  
+  ```py
+  width, height = screen.get_size()
+  screen_points = []
+  
+  for p in projected_points:
+      # p is gonna be of the form [x, y, z, w]
+      # We then normalize x and y with w to fit it onto R^2
+      if p[3] != 0:
+          x_ndc = p[0] / p[3]  # Normalize x via x' = x/w
+          y_ndc = p[1] / p[3]  # Normalize y via y' = y/w
+      else:
+          x_ndc, y_ndc = 0, 0
+      
+  
+      # convert from normalized device coords (-1..1) to screen coordinates
+      x_screen = int((x_ndc + 1) * 0.5 * width)
+      y_screen = int((1 - (y_ndc + 1) * 0.5) * height)  # flip y-axis
+      screen_points.append((x_screen, y_screen))
+  # draw triangle lines
+  pygame.draw.polygon(screen, color, screen_points, width=1) 
+  ```
+</details>
 
 If you draw it the way followed here you may arrive at a similar result to what is below. 
 
 <p align = "center">
   <img width="796" height="632" alt="image" src="https://github.com/user-attachments/assets/5e651f9a-77ba-4e46-b323-838e3b3217dd" />
 </p>
+
+
+# Rotations
+Our cube looks pretty flat so lets see those dimensions at work.
+
+We can apply a rotation matrix to it to and see how the cube will look as it rotates in real time!
+
+We can first see how a rotation matrix actually looks.
+
+$$
+  Rot_x = \begin{bmatrix}
+    1 & 0 & 0  \\
+    0 & cos(\theta) & - sin(\theta) \\
+    0 & sin(\theta) & cos(\theta) \\
+  \end{bmatrix}
+$$
+$$
+  Rot_y = \begin{bmatrix}
+    cos(\theta) &  sin(\theta) & 0 \\
+    0 & 1 & 0 \\
+    -sin(\theta) & cos(\theta) & 0
+  \end{bmatrix}
+$$
+
+$$
+  Rot_z = \begin{bmatrix}
+    cos(\theta) & - sin(\theta) & 0 \\
+    sin(\theta) & cos(\theta) & 0 \\
+    0 & 0 & 1 \\
+  \end{bmatrix}
+$$
+
+And I think the first thing you can probably notice is that these rotations are $3\times 3$ matrixs and that doesn't work for our homogenous cordinates.
+
+A pretty easy fix is to think back to how the identity matrix looks and that is
+
+$$
+  \begin{bmatrix}
+    1 & 0 & 0 & 0 & \dots \\
+    0 & 1 & 0 & 0 & \dots \\
+    0 & 0 & 1 &  0 & \dots \\
+    0 & 0 & 0 & 1 & \dots \\
+    \vdots & \vdots & \vdots & \vdots  & \ddots 
+  \end{bmatrix}
+$$
+
+So this diagonal pattern persists through the entire matrix to form the identity for some $n \times n$ matrix.
+
+So since we know each row of the identity matrix preserves that value and we want to preserve our homogenous cordinate $w$ then we can add the fourth row of the identity matrix to each rotation matrix making.
+
+$$
+  Rot_x = \begin{bmatrix}
+    1 & 0 & 0  & 0\\
+    0 & cos(\theta) & - sin(\theta) & 0 \\
+    0 & sin(\theta) & cos(\theta) & 0\\
+    0 & 0 & 0 & 1
+  \end{bmatrix}
+$$
+
+
+<details>
+  <summary>Python Implementation</summary>
+  
+  ```py
+  def rotate_x(theta: float) -> np.ndarray:
+    return np.array([
+        [1, 0,                0,               0],
+        [0, math.cos(theta), -math.sin(theta), 0],
+        [0, math.sin(theta),  math.cos(theta), 0],
+        [0, 0,                0,               1]
+    ])
+  ```
+
+</details>
+
+
+$$
+  Rot_y = \begin{bmatrix}
+    cos(\theta) &  sin(\theta) & 0 & 0\\
+    0 & 1 & 0 & 0\\
+    -sin(\theta) & cos(\theta) & 0 & 0\\
+    0 & 0 & 0 & 1
+  \end{bmatrix}
+$$
+
+<details>
+  <summary>Python Implementation</summary>
+  
+  ```py
+  def rotate_y(theta: float) -> np.ndarray:
+    return np.array([
+        [ math.cos(theta), 0, math.sin(theta), 0],
+        [ 0,               1, 0,               0],
+        [-math.sin(theta), 0, math.cos(theta), 0],
+        [ 0,               0, 0,               1]
+    ])
+  ```
+
+</details>
+
+
+$$
+  Rot_z = \begin{bmatrix}
+    cos(\theta) & - sin(\theta) & 0 & 0 \\
+    sin(\theta) & cos(\theta) & 0 & 0\\
+    0 & 0 & 1 & 0\\
+    0 & 0 & 0 & 1
+  \end{bmatrix}
+$$
+
+<details>
+  <summary>Python Implementation</summary>
+  
+  ```py
+  def rotate_z(theta: float) -> np.ndarray:
+    return np.array([
+        [math.cos(theta), -math.sin(theta), 0, 0],
+        [math.sin(theta),  math.cos(theta), 0, 0],
+        [0,                0,               1, 0],
+        [0,                0,               0, 1]
+    ])
+  ```
+  
+</details>
+
+Now armed with our rotation matrixs lets rotate our matrix!
+
+We can do this by taking a rotation matrix of our choice with a given $\theta$ and multiplying our pre projected points with it.
+
+$$
+  r_n = (Rot_{dir})(t_n)
+$$
+
+<details>
+  <summary>
+    Python Implementation
+  </summary>
+
+  Note `@` is the matrix multiplication symbol in `NumPy`
+  ```py
+      #rotate 
+      for (i, p) in enumerate(tri):
+          tri[i] = rotate_y_mat @ rotate_x_mat @ rotate_z_mat @ p    
+  ```
+  
+</details>
+
+# Translation
+Translation here means to shift the position of our model someway in world space.
+
+To do that it is actually straight forward.
+
+We can have a Vector $\vec{m}$ we want to translate our points $t_{n}$ with and to do that it is simply
+
+$$
+  t_{n}' = t_{n} - \vec{m}
+$$
+
+And this will move each vertex in our triangle by $\vec{m}$ so if 
+
+$$
+  \vec{m} = \begin{bmatrix}
+    0 \\
+    0 \\
+    2 \\
+    0 \\
+  \end{bmatrix}
+$$
+
+then $t_{n}'$ would be $t_{n}$ shifted in the z-axis by $-2$.
+
+<details>
+  <summary>
+    Python Implementation
+  </summary>
+  
+  ```py
+    # translate
+    for (i, _) in enumerate(tri): 
+        tri[i] = tri[i] - np.array([0, 0, 2, 0])
+  ```
+
+</details>
+
+# Rotating Cube 
+Combining these examples we should have a rendering function resembeling
+
+<details>
+  <summary>
+    Python Implementation
+  </summary>
+
+  ```py
+  for tris in renderBuffer.tris:
+        p1 = renderBuffer.verts[tris[0]]
+        p2 = renderBuffer.verts[tris[1]]
+        p3 = renderBuffer.verts[tris[2]]
+
+
+        # This takes our non projected points 
+        
+        tri:list[np.ndarray] = [p1.copy(), p2.copy(), p3.copy()]
+
+        rotate_z_mat = matrixs.rotate_z(rotation_angle)
+        rotate_x_mat = matrixs.rotate_x(rotation_angle)
+        rotate_y_mat = matrixs.rotate_y(rotation_angle)
+
+        
+        #rotate 
+        for (i, p) in enumerate(tri):
+            tri[i] = rotate_y_mat @ rotate_x_mat @ rotate_z_mat @ p    
+        
+        # translate
+        for (i, _) in enumerate(tri): 
+            tri[i] = tri[i] - np.array([0, 0, 2, 0]) 
+
+        #points for drawing
+        projected_points = np.stack([
+            projMat @ tri[0],
+            projMat @ tri[1],
+            projMat @ tri[2]
+        ])
+        width, height = screen.get_size()
+        screen_points = []
+    
+        for p in projected_points:
+            # p is gonna be of the form [x, y, z, w]
+            # We then normalize x and y with z to fit it onto R^2
+            if p[3] != 0:
+                x_ndc = p[0] / p[3]  # Normalize x via x' = x/z
+                y_ndc = p[1] / p[3]  # Normalize y via y' = y/z
+            else:
+                x_ndc, y_ndc = 0, 0
+            
+    
+            # convert from normalized device coords (-1..1) to screen coordinates
+            x_screen = int((x_ndc + 1) * 0.5 * width)
+            y_screen = int((1 - (y_ndc + 1) * 0.5) * height)  # flip y-axis
+            screen_points.append((x_screen, y_screen))
+        pygame.draw.line(screen, color, screen_points[0], screen_points[1])
+        pygame.draw.line(screen, color, screen_points[1], screen_points[2])
+        pygame.draw.line(screen, color, screen_points[2], screen_points[0])
+  ```
+</details>
+
+
+

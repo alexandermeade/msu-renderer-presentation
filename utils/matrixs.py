@@ -1,4 +1,5 @@
 import numpy as np
+import pygame
 from utils.camera import Camera
 import math
 
@@ -37,6 +38,31 @@ def projection(camera: Camera) -> np.ndarray:
         [0, 0, -(zfar + znear)/(zfar - znear), -1],
         [0, 0, -2*znear*zfar/(zfar - znear), 0]
     ], dtype=np.float32)
+
+def rotate_x(theta: float) -> np.ndarray:
+    return np.array([
+        [1, 0,                0,               0],
+        [0, math.cos(theta), -math.sin(theta), 0],
+        [0, math.sin(theta),  math.cos(theta), 0],
+        [0, 0,                0,               1]
+    ])
+
+def rotate_z(theta: float) -> np.ndarray:
+
+    return np.array([
+        [math.cos(theta), -math.sin(theta), 0, 0],
+        [math.sin(theta),  math.cos(theta), 0, 0],
+        [0,                0,               1, 0],
+        [0,                0,               0, 1]
+    ])
+
+def rotate_y(theta: float) -> np.ndarray:
+    return np.array([
+        [ math.cos(theta), 0, math.sin(theta), 0],
+        [ 0,               1, 0,               0],
+        [-math.sin(theta), 0, math.cos(theta), 0],
+        [ 0,               0, 0,               1]
+    ])
 
 def projection2(camera: Camera) -> np.ndarray:
     aspect_ratio = camera.width / camera.height

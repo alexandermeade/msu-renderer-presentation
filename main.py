@@ -25,24 +25,35 @@ def main():
         width= screen_width, 
         height=screen_height
     )
-    projMat = matrixs.projection(camera)
+    
     pygame.display.set_caption("Pygame Draw Point")
 
- 
+    angle = 0
+
+
+
     WHITE:Color = (255, 255, 255)
-
-
     # game loop
     running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+  
+        angle += 0.001
 
         screen.fill(WHITE)
-        render(screen, renderBuffer, projMat, camera)
+        #dt = clock.tick(60) / 1000.0
+        projMat = matrixs.projection(camera)
+        render(
+            screen= screen, 
+            rotation_angle=angle, 
+            renderBuffer=renderBuffer, 
+            projMat=projMat, 
+            camera=camera
+        )
+        # Get delta time in milliseconds and convert to seconds (float)
         
-
         #updates the next frame
         pygame.display.flip()
 
@@ -54,7 +65,7 @@ def draw_triangle(screen, projected_points, color=(255,255,255)):
     screen_points = []
 
     for p in projected_points:
-        # p is gonna be of the form [x, y, z, 1]
+        # p is gonna be of the form [x, y, z, w]
         # We then normalize x and y with z to fit it onto R^2
         if p[3] != 0:
             x_ndc = p[0] / p[3]  # Normalize x via x' = x/z
@@ -69,17 +80,34 @@ def draw_triangle(screen, projected_points, color=(255,255,255)):
         screen_points.append((x_screen, y_screen))
 
     # draw triangle lines
-    pygame.draw.polygon(screen, color, screen_points, width=1)  # width=0 for filled
+    print(f"-----------\n{screen_points}")
+    pygame.draw.line(screen, color, screen_points[0], screen_points[1])
+    pygame.draw.line(screen, color, screen_points[1], screen_points[2])
+    pygame.draw.line(screen, color, screen_points[2], screen_points[0])
 
-def render(screen, renderBuffer:RenderBuffer, projMat: np.matrix , camera: Camera):
+def render(screen, renderBuffer:RenderBuffer, rotation_angle: float, projMat: np.matrix , camera: Camera):
     for tris in renderBuffer.tris:
         p1 = renderBuffer.verts[tris[0]]
         p2 = renderBuffer.verts[tris[1]]
         p3 = renderBuffer.verts[tris[2]]
 
-
         # This takes our non projected points 
-        tri = [p1, p2, p3]
+        
+        tri:list[np.ndarray] = [p1.copy(), p2.copy(), p3.copy()]
+
+        rotate_z_mat = matrixs.rotate_z(rotation_angle)
+        rotate_x_mat = matrixs.rotate_x(rotation_angle)
+        rotate_y_mat = matrixs.rotate_y(rotation_angle)
+        
+        #rotate 
+        for (i, p) in enumerate(tri):
+            tri[i] = rotate_y_mat @ rotate_x_mat @ rotate_z_mat @ p    
+        
+        # translate
+        for (i, _) in enumerate(tri): 
+            tri[i] = tri[i] - np.array([0, 0, 2, 0]) 
+
+        #points for rendering
         projected_points = np.stack([
             projMat @ tri[0],
             projMat @ tri[1],
@@ -88,7 +116,6 @@ def render(screen, renderBuffer:RenderBuffer, projMat: np.matrix , camera: Camer
 
         #draw the projected points on the screen
         draw_triangle(screen, projected_points, color=(255,0,0))
-
 
 if __name__ == "__main__":
     main()
