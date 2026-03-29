@@ -308,7 +308,9 @@ $$
 
 The issue is we still have yet to get to our end result of $\mathbb{R}^4 \to \mathbb{R}^2$ 
 
-To do this we must normalize or coordinates into $\mathbb{R}^2$ and this is done via
+To do this we must normalize our homogenous coordinates into $\mathbb{R}^2$ and this is done via dividing by our `w` coordinate. 
+The reason why we do this is because after we put our vertex into the projection matrix our `w` cordinate begins to encode the depth relative to the camera.
+So dividing by `w` scales our vertex relative to the camera.
 
 $$
   \vec{p_n}\prime = \begin{bmatrix}
@@ -324,7 +326,8 @@ $$
   \end{bmatrix} 
 $$
 
-You may notice that we still have $z'$ here in our "$\mathbb{R}^2$" vector and that's because $z'$ represents the depth in relation to our $z_{near}$ and $z_{far}$ planes, so $x'$ and $y'$ are the only things accounting for location here. So we can effectivly ignore $z'$ for drawing and only worry about $x'$ and $y'$
+You may notice that we still have $z'$ here in our qoute $\mathbb{R}^2$ vector and that's because $z'$ represents the depth in relation to our $z_{near}$ and $z_{far}$ planes, so $x'$ and $y'$ are the only things accounting for location here. So we can effectivly ignore $z'$ for drawing and only worry about $x'$ and $y'$
+
 
 With our new $\vec{p_n}'$ we now have a vertex of the triangle in screen coordinates which means we can draw the pixel (I lied). What we actually have is the projected coordinate into normalized device coordinates meaning that our point will be in the interval of $(-1, 1)$ on the screen. 
 
