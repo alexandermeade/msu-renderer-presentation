@@ -7,7 +7,7 @@ from utils.reader import RenderBuffer, ObjReader
 
 def main():
 
-    objreader = ObjReader("./models/cube.obj")
+    objreader = ObjReader("./models/torus.obj")
     renderBuffer = objreader.parse()
 
     print(renderBuffer)
@@ -40,8 +40,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
   
-        angle += 0.001
-
+        angle += 0.01
         screen.fill(WHITE)
         #dt = clock.tick(60) / 1000.0
         projMat = matrixs.projection(camera)
