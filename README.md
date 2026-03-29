@@ -636,5 +636,15 @@ https://github.com/user-attachments/assets/bfb4b175-46a4-459d-93e4-85a982b79f03
   ```
 </details>
 
+The complete implementation can be found in the repo for further assistance. 
+
+# What's next?
+
+The next part of this will go over normals, culling, rasterazation and lighting.
+
+And can be found [here](https://github.com/alexandermeade/msu-renderer-presentation-part-2).
+
+
+
 
 
