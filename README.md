@@ -229,11 +229,11 @@ Below is a more viual representation of what that would look like
   <img width="722" height="522" alt="image" src="https://github.com/user-attachments/assets/62c58ecd-8b50-45c1-8945-48648f8ac34b" />
 </p>
 
-Let $\theta = \text{Field of View}$
-
 Let $a = \text{aspect ratio} = width / height$
 
 Let $f = tan^{-1}(\theta / 2)$ 
+
+$f$ represents our actual field of view with respect to $\theta$
 
 $$ 
 \begin{bmatrix} 
@@ -266,11 +266,13 @@ $$
   ```
   
 </details>
+
 We can represent this projection in Python using NumPy. 
 
 Using the `cube.obj` file, we should be able to produce the front of a cube by using the projected points of each vertex and then drawing it in order of the faces for each triangle (This is also known as the winding order)
 
 So if we take each triangle we want to render as $t$, noting that each triangle has three points represented as vectors.
+
 We can project each point from the triangle using the projection matrix while notating each vertex of the triangle as $t_{n}$, like so
 
 
