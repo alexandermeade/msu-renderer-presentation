@@ -1,8 +1,8 @@
 # The Goal of this Repo
-A friendly walkthrough of how 3D rendering works from scratch, using Python. By the end you'll get a feel for the full graphics pipeline from loading a 3D model to getting it on screen. 
+A friendly walkthrough of how 3D rendering works from scratch, using Python. By the end, you'll get a feel for the full graphics pipeline from loading a 3D model to getting it on screen. 
 
 # What is a cpu renderer 
-A CPU renderer is a primitive style of renderer mostly used to show off how a renderer works without having to worry about implementing the techniques for a GPU. 
+A CPU renderer is a primitive style of renderer mostly used to show off how a renderer works without having to worry about implementing the techniques for a GPU.
 
 There are heavy limitations put ontop of a CPU renderer and I would highly advise against using one for making anything serious. However most of these techniques should carry over if you were to use a tool like [Vulkan](https://www.vulkan.org/) or [OpenGL](https://www.opengl.org/) for GPU rendering. 
 
@@ -65,9 +65,10 @@ f 1 3 4
 f 5 1 2
 ```
 
-Looking at this we can pretty quickly see that each line starting with a `v` is gonna be some point in 3D space. Where as every `f` is gonna be some pairings of points to form a triangle. 
 
-The way this cube gets subsected and rerendered back out in triangles looks like this with each triangle highlighted. 
+Looking at this, we can pretty quickly see that each line starting with a `v` is gonna be some point in 3D space. Whereas every `f` is gonna be some pairings of points to form a triangle. 
+
+The way this cube gets subsected and rerendered back out in triangles looks like this, with each triangle highlighted. 
 
 <p align = "center">
   <img width="294" height="285" alt="image" src="https://github.com/user-attachments/assets/e27a2945-ff26-448c-961f-c15807859688" />
@@ -124,20 +125,19 @@ class RenderBuffer:
 ```
 </details>
 
-
-Now you may notice in the implementation that as we are appending the points from the vertexs we actually extend the vertexs by one extra coordiniate and we set it to 1 for all vertexs. The reason we do this is revealed later is to set our implementation in homogenous coordinates. These will be super helpful later on in the implementation. 
-
+Now you may notice in the implementation that as we are appending the points from the vertexs we actually extend the vertices by one extra coordinate, and we set it to 1 for all vertices. The reason we do this is revealed later, which is to set our implementation in homogeneous coordinates. These will be super helpful later on in the implementation. 
 
 # Math Prerequisites 
-As you have probably noticed when building a 3D renderer there is a pretty clear and hard issue that gets presented almost immeditatly.
-How do we go from a set of vertexs $\mathbb{R}^4$ into a set of points on a screen $\mathbb{R}^2$. 
+As you have probably noticed, when building a 3D renderer, there is a pretty clear and hard issue that gets presented almost immediately.
+How do we go from a set of vertices $\mathbb{R}^4$ into a set of points on a screen $\mathbb{R}^2$. 
 
-To do this we are going to utalize Linear Algebra which is a set of mathematics created for dealing with problems in $n$-th dimensional space via matrixs.
+To do this, we are going to utilize Linear Algebra, which is a set of mathematics created for dealing with problems in $n$-th dimensional space via matrices.
 
-A few things to know about matrixs are the following. 
+A few things to know about matrices are the following. 
 
-Matrixs are notated as a set of values within a number of rows and colmns
+Matrices are notated as a set of values within a number of rows and columns
 A $2\times 2$ example of a matrix would look like
+
 
 $$
   M = \begin{bmatrix}
@@ -166,7 +166,6 @@ $$
     n
     \end{bmatrix} 
 $$
-
 
 A good thing to note is that a matrix multiplied by a vector will always result in a vector regardless of direction of multiplication.
 
@@ -267,12 +266,13 @@ $$
   ```
   
 </details>
-We can represent this projection in Python using NumPy 
+We can represent this projection in Python using NumPy. 
 
-Using the `cube.obj` file we should be able to produce the front of a cube through using the projected points of each vertex and then drawing it in order of the faces for each triangle (This is also known as the winding order)
+Using the `cube.obj` file, we should be able to produce the front of a cube by using the projected points of each vertex and then drawing it in order of the faces for each triangle (This is also known as the winding order)
 
-So if we take each triangle we want to render as $t$ noting that each triangle has three points represneted as vectors.
-We can project each point from the triangle using the projection matrix while notating each vertex of the triangle as $t_{n}$ like so
+So if we take each triangle we want to render as $t$, noting that each triangle has three points represented as vectors.
+We can project each point from the triangle using the projection matrix while notating each vertex of the triangle as $t_{n}$, like so
+
 
 $$
   \vec{p_n} = (proj) (\vec{t_{n}})
@@ -314,8 +314,8 @@ $$
 
 The issue is we still have yet to get to our end result of $\mathbb{R}^4 \to \mathbb{R}^2$ 
 
-To do this we must normalize our homogenous coordinates into $\mathbb{R}^2$ and this is done via dividing by our `w` coordinate. 
-The reason why we do this is because after we put our vertex into the projection matrix our `w` cordinate begins to encode the depth relative to the camera.
+To do this, we must normalize our homogeneous coordinates into $\mathbb{R}^2$, and this is done via dividing by our `w` coordinate. 
+The reason why we do this is that after we put our vertex into the projection matrix, our `w` coordinate begins to encode the depth relative to the camera.
 So dividing by `w` scales our vertex relative to the camera.
 
 $$
@@ -332,10 +332,10 @@ $$
   \end{bmatrix} 
 $$
 
-You may notice that we still have $z'$ here in our qoute $\mathbb{R}^2$ vector and that's because $z'$ represents the depth in relation to our $z_{near}$ and $z_{far}$ planes, so $x'$ and $y'$ are the only things accounting for location here. So we can effectivly ignore $z'$ for drawing and only worry about $x'$ and $y'$
+You may notice that we still have $z'$ here in our quote $\mathbb{R}^2$ vector, and that's because $z'$ represents the depth in relation to our $z_{near}$ and $z_{far}$ planes, so $x'$ and $y'$ are the only things accounting for location here. So we can effectivly ignore $z'$ for drawing and only worry about $x'$ and $y'$
 
 
-With our new $\vec{p_n}'$ we now have a vertex of the triangle in screen coordinates which means we can draw the pixel (I lied). What we actually have is the projected coordinate into normalized device coordinates meaning that our point will be in the interval of $(-1, 1)$ on the screen. 
+With our new $\vec{p_n}'$ we now have a vertex of the triangle in screen coordinates, which means we can draw the pixel (I lied). What we actually have is the projected coordinate into normalized device coordinates, meaning that our point will be in the interval of $(-1, 1)$ on the screen. 
 
 So if we want to scale it to our resolution we must multiply it using this formula
 
@@ -432,7 +432,7 @@ $$
 
 So this diagonal pattern persists through the entire matrix to form the identity for some $n \times n$ matrix.
 
-So since we know each row of the identity matrix preserves that value and we want to preserve our homogenous cordinate $w$ then we can add the fourth row of the identity matrix to each rotation matrix making.
+So, since we know each row of the identity matrix preserves that value and we want to preserve our homogeneous coordinate $w$, then we can add the fourth row of the identity matrix to each rotation matrix, making.
 
 $$
   Rot_x = \begin{bmatrix}
